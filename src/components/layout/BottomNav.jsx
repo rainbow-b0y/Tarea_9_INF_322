@@ -15,11 +15,11 @@ const BottomButton = ({ active, icon, label, onClick }) => (
   </button>
 )
 
-const BottomNav = ({ currentView, onNavigate, onOpenDrawer }) => (
+const BottomNav = ({ currentView, onNavigate, onOpenDrawer, onShowAppointments }) => (
   <nav className='safe-bottom fixed inset-x-0 bottom-0 z-20 flex h-[68px] items-center justify-around border-t border-gray-100 bg-white px-2 lg:hidden' aria-label='Navegación móvil'>
     <BottomButton active={currentView === 'dashboard'} icon='home' label='Inicio' onClick={() => onNavigate('dashboard')} />
     <BottomButton active={transactionViews.includes(currentView)} icon='file' label='Trámites' onClick={onOpenDrawer} />
-    <BottomButton active={['specialists', 'calendar', 'confirmation'].includes(currentView)} icon='calendar' label='Mis Horas' onClick={() => onNavigate('confirmation')} />
+    <BottomButton active={false} icon='calendar' label='Mis Horas' onClick={onShowAppointments} />
     <BottomButton active={currentView === 'perfil'} icon='user' label='Perfil' onClick={() => onNavigate('perfil')} />
   </nav>
 )

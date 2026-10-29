@@ -2,15 +2,22 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import BottomNav from './components/layout/BottomNav'
 import CalendarView from './components/booking/CalendarView'
+import CaeView from './components/tramites/CaeView'
+import CancelModal from './components/common/CancelModal'
 import ConfirmationView from './components/booking/ConfirmationView'
 import DashboardView from './components/booking/DashboardView'
+import DeclaracionView from './components/tramites/DeclaracionView'
 import SpecialistsView from './components/booking/SpecialistsView'
 import DesktopHeader from './components/layout/DesktopHeader'
 import Drawer from './components/layout/Drawer'
 import Header from './components/layout/Header'
+import PerfilView from './components/tramites/PerfilView'
 import Sidebar from './components/layout/Sidebar'
-import PlaceholderView from './components/views/PlaceholderView'
-import { servicesData } from './data/servicesData'
+import SocioeconomicoView from './components/tramites/SocioeconomicoView'
+import SolicitudesView from './components/tramites/SolicitudesView'
+import TneView from './components/tramites/TneView'
+import Toast from './components/common/Toast'
+import { occupiedTimeSlots, servicesData } from './data/servicesData'
 
 export const VALID_VIEWS = [
   'dashboard',
@@ -25,10 +32,25 @@ export const VALID_VIEWS = [
   'perfil'
 ]
 
+const initialAppointment = {
+  service: 'Kinesiología',
+  specialist: 'Klgo. Matías Rojas',
+  date: 'Jueves 04 de septiembre',
+  time: '11:30',
+  modality: 'Presencial'
+}
+
 const App = () => {
   const [currentView, setCurrentView] = useState('dashboard')
   const [viewStack, setViewStack] = useState(['dashboard'])
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [appointment, setAppointment] = useState(initialAppointment)
+  const [releasedTimeSlots, setReleasedTimeSlots] = useState([])
+  const [toast, setToast] = useState(null)
+  const [isDeclarationSigned, setIsDeclarationSigned] = useState(false)
+  const [caeAmount, setCaeAmount] = useState('$ 2.450.000')
+  const [isCaeSent, setIsCaeSent] = useState(false)
   const [booking, setBooking] = useState({
     servicio: null,
     especialista: null,
@@ -37,6 +59,12 @@ const App = () => {
     modalidad: 'Presencial'
   })
   const contentRef = useRef(null)
+
+  const showToast = useCallback((message) => {
+    setToast({ id: Date.now(), message })
+  }, [])
+
+  const hideToast = useCallback(() => setToast(null), [])
 
   const scrollToTop = useCallback(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0
@@ -114,17 +142,54 @@ const App = () => {
 
   const confirmBooking = useCallback(() => {
     if (!booking.servicio || !booking.especialista || !booking.fecha || !booking.hora) return
+
+    setReleasedTimeSlots((current) => {
+      const next = current.filter((time) => time !== booking.hora)
+      if (appointment && appointment.time !== booking.hora && !next.includes(appointment.time)) {
+        next.push(appointment.time)
+      }
+      return next
+    })
+    setAppointment({
+      service: booking.servicio.title,
+      specialist: booking.especialista.name,
+      date: booking.fecha.fullLabel,
+      time: booking.hora,
+      modality: booking.modalidad
+    })
     navigateTo('confirmation')
-  }, [booking, navigateTo])
+  }, [appointment, booking, navigateTo])
+
+  const showAppointments = useCallback(() => {
+    navigateTo('dashboard')
+    window.setTimeout(() => {
+      document.getElementById('mis-horas')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }, [navigateTo])
+
+  const cancelAppointment = useCallback(() => {
+    if (!appointment) return
+    setReleasedTimeSlots((current) => current.includes(appointment.time) ? current : [...current, appointment.time])
+    setAppointment(null)
+    setBooking({
+      servicio: null,
+      especialista: null,
+      fecha: null,
+      hora: null,
+      modalidad: 'Presencial'
+    })
+    setIsCancelModalOpen(false)
+    showToast('Hora anulada correctamente.')
+  }, [appointment, showToast])
 
   useEffect(() => {
     scrollToTop()
   }, [currentView, scrollToTop])
 
   useEffect(() => {
-    document.body.style.overflow = isDrawerOpen ? 'hidden' : ''
+    document.body.style.overflow = isDrawerOpen || isCancelModalOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
-  }, [isDrawerOpen])
+  }, [isCancelModalOpen, isDrawerOpen])
 
   const hasConfirmedBooking = Boolean(
     booking.servicio &&
@@ -133,9 +198,21 @@ const App = () => {
     booking.hora
   )
 
+  const unavailableTimeSlots = [
+    ...occupiedTimeSlots.filter((time) => !releasedTimeSlots.includes(time)),
+    ...(appointment ? [appointment.time] : [])
+  ].filter((time, index, slots) => slots.indexOf(time) === index)
+
   const renderView = () => {
     if (currentView === 'dashboard') {
-      return <DashboardView onSelectService={selectService} />
+      return (
+        <DashboardView
+          appointment={appointment}
+          onNavigate={handleNavigate}
+          onRequestCancel={() => setIsCancelModalOpen(true)}
+          onSelectService={selectService}
+        />
+      )
     }
 
     if (currentView === 'specialists' && booking.servicio) {
@@ -143,19 +220,56 @@ const App = () => {
     }
 
     if (currentView === 'calendar' && booking.servicio && booking.especialista) {
-      return <CalendarView booking={booking} onChange={updateBooking} onConfirm={confirmBooking} />
+      return <CalendarView booking={booking} unavailableTimeSlots={unavailableTimeSlots} onChange={updateBooking} onConfirm={confirmBooking} />
     }
 
     if (currentView === 'confirmation' && hasConfirmedBooking) {
       return <ConfirmationView booking={booking} onGoHome={() => navigateTo('dashboard')} />
     }
 
-    return <PlaceholderView currentView={currentView} onNavigate={handleNavigate} />
+    if (currentView === 'socioeconomico') {
+      return <SocioeconomicoView onUpdate={() => showToast('La actualización de antecedentes estará disponible próximamente.')} />
+    }
+
+    if (currentView === 'declaracion') {
+      return (
+        <DeclaracionView
+          isSigned={isDeclarationSigned}
+          onSigned={() => {
+            setIsDeclarationSigned(true)
+            showToast('Declaración firmada correctamente.')
+          }}
+        />
+      )
+    }
+
+    if (currentView === 'solicitudes') {
+      return <SolicitudesView onOpenCae={() => navigateTo('cae')} />
+    }
+
+    if (currentView === 'cae') {
+      return (
+        <CaeView
+          amount={caeAmount}
+          isSent={isCaeSent}
+          onAmountChange={setCaeAmount}
+          onSent={() => {
+            setIsCaeSent(true)
+            showToast('Solicitud CAE enviada correctamente.')
+          }}
+        />
+      )
+    }
+
+    if (currentView === 'tne') return <TneView />
+    if (currentView === 'perfil') return <PerfilView />
+
+    return null
   }
 
   return (
     <div className='min-h-screen bg-gray-100 text-navy-900 lg:flex lg:h-screen lg:overflow-hidden'>
-      <Sidebar currentView={currentView} onNavigate={handleNavigate} />
+      <Sidebar currentView={currentView} onNavigate={handleNavigate} onShowAppointments={showAppointments} />
 
       <div className='flex min-h-screen flex-1 flex-col lg:h-screen lg:min-h-0 lg:overflow-hidden'>
         <Header
@@ -169,6 +283,8 @@ const App = () => {
           currentView={currentView}
           canGoBack={viewStack.length > 1}
           onBack={goBack}
+          onNotifications={() => showToast('No tienes notificaciones nuevas.')}
+          onSearch={(term) => showToast(term ? `Buscando “${term}”…` : 'Escribe un término para buscar.')}
         />
 
         <main
@@ -184,6 +300,7 @@ const App = () => {
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenDrawer={() => setIsDrawerOpen(true)}
+        onShowAppointments={showAppointments}
       />
       <Drawer
         isOpen={isDrawerOpen}
@@ -191,6 +308,12 @@ const App = () => {
         onClose={() => setIsDrawerOpen(false)}
         onNavigate={handleNavigate}
       />
+      <CancelModal
+        isOpen={isCancelModalOpen}
+        onCancel={cancelAppointment}
+        onClose={() => setIsCancelModalOpen(false)}
+      />
+      <Toast key={toast ? toast.id : 'empty'} message={toast ? toast.message : ''} onClose={hideToast} />
     </div>
   )
 }

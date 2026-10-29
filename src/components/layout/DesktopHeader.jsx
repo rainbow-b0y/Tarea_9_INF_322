@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import NavIcon from './NavIcon'
 import { viewMeta } from './viewMeta'
 
-const DesktopHeader = ({ currentView, canGoBack, onBack }) => {
+const DesktopHeader = ({ currentView, canGoBack, onBack, onNotifications, onSearch }) => {
   const meta = viewMeta[currentView] || viewMeta.dashboard
+  const [searchTerm, setSearchTerm] = useState('')
 
   return (
     <header className='hidden h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-8 lg:flex'>
@@ -23,18 +24,29 @@ const DesktopHeader = ({ currentView, canGoBack, onBack }) => {
       </div>
 
       <div className='flex items-center gap-4'>
-        <label className='flex w-64 items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5'>
-          <span className='sr-only'>Buscar en SIREB</span>
+        <form
+          role='search'
+          onSubmit={(event) => {
+            event.preventDefault()
+            onSearch(searchTerm.trim())
+          }}
+          className='flex w-64 items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 focus-within:ring-2 focus-within:ring-orange-400'
+        >
+          <label htmlFor='site-search' className='sr-only'>Buscar en SIREB</label>
           <NavIcon name='search' className='h-4 w-4 text-gray-400' />
           <input
+            id='site-search'
             type='search'
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
             placeholder='Buscar en SIREB...'
             className='w-full bg-transparent text-sm outline-none placeholder:text-gray-400'
           />
-        </label>
+        </form>
         <button
           type='button'
           aria-label='Ver notificaciones'
+          onClick={onNotifications}
           className='relative flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-navy-700 transition hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400'
         >
           <NavIcon name='bell' />

@@ -51,7 +51,7 @@ const BookingButton = ({ enabled, onConfirm }) => (
   </button>
 )
 
-const CalendarView = ({ booking, onChange, onConfirm }) => {
+const CalendarView = ({ booking, onChange, onConfirm, unavailableTimeSlots = occupiedTimeSlots }) => {
   const days = useMemo(getBusinessDays, [])
   const isReady = Boolean(booking.fecha && booking.hora)
 
@@ -115,7 +115,7 @@ const CalendarView = ({ booking, onChange, onConfirm }) => {
             </div>
             <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
               {timeSlots.map((time) => {
-                const occupied = occupiedTimeSlots.includes(time)
+                const occupied = unavailableTimeSlots.includes(time)
                 const selected = booking.hora === time
                 return (
                   <button
@@ -161,4 +161,3 @@ const CalendarView = ({ booking, onChange, onConfirm }) => {
 
 export { getBusinessDays }
 export default CalendarView
-

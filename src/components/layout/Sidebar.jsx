@@ -41,7 +41,7 @@ const SubnavButton = ({ children, onClick }) => (
   </button>
 )
 
-const Sidebar = ({ currentView, onNavigate }) => {
+const Sidebar = ({ currentView, onNavigate, onShowAppointments }) => {
   const [openMenu, setOpenMenu] = useState(null)
   const toggleMenu = (menu) => setOpenMenu((current) => current === menu ? null : menu)
 
@@ -61,7 +61,7 @@ const Sidebar = ({ currentView, onNavigate }) => {
         <SidebarButton active={currentView === 'specialists' || currentView === 'calendar'} icon='calendar' onClick={() => onNavigate('specialists')}>
           Agendar Hora
         </SidebarButton>
-        <SidebarButton active={currentView === 'confirmation'} icon='clock' onClick={() => onNavigate('confirmation')}>
+        <SidebarButton active={false} icon='clock' onClick={onShowAppointments}>
           Mis Horas
         </SidebarButton>
 
