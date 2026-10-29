@@ -3,7 +3,7 @@ import React from 'react'
 import NavIcon from './NavIcon'
 import { viewMeta } from './viewMeta'
 
-const Header = ({ currentView, canGoBack, onBack, onOpenDrawer }) => {
+const Header = ({ currentView, titleOverride, canGoBack, onBack, onOpenDrawer }) => {
   const meta = viewMeta[currentView] || viewMeta.dashboard
 
   return (
@@ -22,7 +22,7 @@ const Header = ({ currentView, canGoBack, onBack, onOpenDrawer }) => {
 
         <div className='min-w-0 flex-1'>
           <p className='text-[11px] font-medium uppercase tracking-wide text-navy-200'>SIREB · Sistema de Reservas</p>
-          <h1 className='truncate font-display text-xl font-semibold leading-tight'>{meta.mobileTitle}</h1>
+          <h1 className='truncate font-display text-xl font-semibold leading-tight'>{titleOverride || meta.mobileTitle}</h1>
         </div>
 
         <button

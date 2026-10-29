@@ -40,6 +40,15 @@ h3 {
   background: #d7e0ee;
 }
 
+.day-chip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.day-chip::-webkit-scrollbar {
+  display: none;
+}
+
 .view {
   animation: fade-in 200ms ease-out;
 }
