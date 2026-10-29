@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang='es'>
+  <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta name='theme-color' content='#0B1F3A'>
+    <title>SIREB · Sistema de Reservas</title>
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap' rel='stylesheet'>
+    <script src='https://cdn.tailwindcss.com'></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: { 50:'#EEF2F8',100:'#D7E0EE',200:'#AFC1DD',300:'#87A2CC',400:'#4E6A9B',500:'#2C4874',600:'#1B3A66',700:'#12294D',800:'#0B1F3A',900:'#081729' },
+              orange: { 50:'#FFF3EC',100:'#FFE1CC',200:'#FFC299',300:'#FF9F5C',400:'#F97A2F',500:'#F2711F',600:'#DC5F17',700:'#B34A10' }
+            },
+            fontFamily: {
+              display: ['Poppins', 'sans-serif'],
+              sans: ['Inter', 'sans-serif']
+            },
+            boxShadow: {
+              card: '0 2px 12px rgba(11,31,58,0.07)'
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id='root'></div>
+  </body>
+</html>

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SIREB · Sistema de Reservas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 50:'#EEF2F8',100:'#D7E0EE',200:'#AFC1DD',300:'#87A2CC',400:'#4E6A9B',500:'#2C4874',600:'#1B3A66',700:'#12294D',800:'#0B1F3A',900:'#081729' },
+          orange: { 50:'#FFF3EC',100:'#FFE1CC',200:'#FFC299',300:'#FF9F5C',400:'#F97A2F',500:'#F2711F',600:'#DC5F17',700:'#B34A10' },
+        },
+        fontFamily: {
+          display: ['Poppins','sans-serif'],
+          sans: ['Inter','sans-serif'],
+        },
+        boxShadow: { card: '0 2px 12px rgba(11,31,58,0.07)' }
+      }
+    }
+  }
+</script>
+<style>
+  body{ font-family:'Inter',sans-serif; }
+  h1,h2,h3,.font-display{ font-family:'Poppins',sans-serif; }
+  #content-scroll::-webkit-scrollbar{ width:8px; }
+  #content-scroll::-webkit-scrollbar-thumb{ background:#D7E0EE; border-radius:8px; }
+  .day-chip::-webkit-scrollbar{ display:none; }
+  .day-chip{ -ms-overflow-style:none; scrollbar-width:none; }
+  .view{ animation: fadein .2s ease-out; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .safe-top{ padding-top:max(1rem,env(safe-area-inset-top)); }
+  .safe-bottom{ padding-bottom:env(safe-area-inset-bottom); }
+</style>
+</head>
+<body class="bg-gray-100 text-navy-900 flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
+
+  <!-- ===================== SIDEBAR (escritorio) ===================== -->
+  <aside class="hidden lg:flex lg:w-72 h-screen bg-navy-800 text-white flex-col shrink-0 overflow-y-auto">
+    <div class="p-6 border-b border-white/10">
+      <p class="font-display font-bold text-xl">SIREB</p>
+      <p class="text-xs text-navy-200 mt-0.5">Sistema de Reservas · Campus Central</p>
+    </div>
+
+    <nav class="p-3 flex-1 space-y-1">
+      <button onclick="showView('view-dashboard')" data-nav="view-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1V10"/></svg>
+        Inicio
+      </button>
+
+      <p class="px-3 pt-4 pb-1 text-[11px] font-semibold text-navy-300 uppercase tracking-wide">Agendamiento</p>
+      <button onclick="showView('view-dashboard'); scrollToServicios();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+        Agendar Hora
+      </button>
+      <button onclick="showView('view-dashboard'); scrollToHoras();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Mis Horas
+      </button>
+
+      <p class="px-3 pt-4 pb-1 text-[11px] font-semibold text-navy-300 uppercase tracking-wide">Trámites y Beneficios</p>
+      <button onclick="showView('view-socioeconomico')" data-nav="view-socioeconomico" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 3h14a1 1 0 011 1v16l-4-2-3 2-3-2-3 2-3-2V4a1 1 0 011-1z"/></svg>
+        Antecedentes Socioeconómicos
+      </button>
+
+      <!-- Dropdown Declaración -->
+      <div>
+        <button onclick="toggleAccordion('acc-declaracion-d')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Declaración
+          </span>
+          <svg id="acc-declaracion-d-chevron" class="w-4 h-4 text-navy-300 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="acc-declaracion-d" class="hidden pl-11 pr-2 py-1 space-y-1">
+          <button onclick="showView('view-declaracion')" class="w-full text-left text-sm text-navy-200 hover:text-white py-1.5">Declaración de Antecedentes</button>
+          <button onclick="showView('view-declaracion')" class="w-full text-left text-sm text-navy-200 hover:text-white py-1.5">Declaración de Residencia</button>
+        </div>
+      </div>
+
+      <!-- Dropdown Solicitudes/Postulaciones -->
+      <div>
+        <button onclick="toggleAccordion('acc-solicitudes-d')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path stroke-linecap="round" d="M2 10h20"/></svg>
+            Solicitudes/Postulaciones
+          </span>
+          <svg id="acc-solicitudes-d-chevron" class="w-4 h-4 text-navy-300 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="acc-solicitudes-d" class="hidden pl-11 pr-2 py-1 space-y-1">
+          <button onclick="showView('view-cae')" class="w-full text-left text-sm text-navy-200 hover:text-white py-1.5 leading-snug">Solicitud Monto Asignación Crédito Aval del Estado</button>
+          <button onclick="showView('view-solicitudes')" class="w-full text-left text-sm text-navy-200 hover:text-white py-1.5">Ver todas mis solicitudes</button>
+        </div>
+      </div>
+
+      <button onclick="showView('view-tne')" data-nav="view-tne" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path stroke-linecap="round" d="M13 10h5M13 14h3"/></svg>
+        TNE
+      </button>
+    </nav>
+
+    <button onclick="showView('view-perfil')" class="m-3 mt-auto flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 text-left">
+      <div class="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center font-display font-semibold text-sm shrink-0">JP</div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold truncate">Joaquín Pérez</p>
+        <p class="text-xs text-navy-300 truncate">Ver perfil</p>
+      </div>
+    </button>
+  </aside>
+
+  <!-- ===================== ENCABEZADO MÓVIL ===================== -->
+  <header class="lg:hidden bg-navy-800 text-white safe-top pb-4 px-5 sticky top-0 z-20">
+    <div class="flex items-center justify-between gap-3">
+      <button id="btn-back" onclick="goBack()" class="hidden w-9 h-9 rounded-full bg-white/10 items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] uppercase tracking-wide text-navy-200 font-medium">SIREB · Sistema de Reservas</p>
+        <h1 id="header-title" class="text-xl font-display font-semibold leading-tight truncate">Hola, Joaquín 👋</h1>
+      </div>
+      <button onclick="openDrawer()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <p id="header-subtitle" class="text-navy-200 text-sm mt-1">¿Qué necesitas agendar hoy?</p>
+  </header>
+
+  <!-- ===================== ÁREA PRINCIPAL ===================== -->
+  <div class="flex-1 flex flex-col lg:h-screen lg:overflow-hidden">
+
+    <!-- TOPBAR (escritorio) -->
+    <header class="hidden lg:flex h-16 bg-white border-b border-gray-200 items-center justify-between px-8 shrink-0">
+      <div class="flex items-center gap-3">
+        <button id="btn-back-desktop" onclick="goBack()" class="hidden w-8 h-8 rounded-full bg-navy-50 items-center justify-center text-navy-700">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <h1 id="page-title" class="font-display font-semibold text-lg text-navy-800">Inicio</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1.5 w-64">
+          <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-3.5-3.5"/></svg>
+          <input type="text" placeholder="Buscar en SIREB..." class="bg-transparent text-sm outline-none w-full placeholder:text-gray-400">
+        </div>
+        <button class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-navy-700 relative">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
+          <span class="absolute top-1.5 right-2 w-2 h-2 bg-orange-500 rounded-full"></span>
+        </button>
+        <div class="w-9 h-9 rounded-full bg-navy-800 text-white flex items-center justify-center font-display font-semibold text-sm">JP</div>
+      </div>
+    </header>
+
+    <!-- ===== CONTENIDO ===== -->
+    <main id="content-scroll" class="flex-1 pb-24 lg:pb-0 lg:overflow-y-auto">
+      <div class="p-5 lg:max-w-6xl lg:mx-auto lg:p-8">
+
+        <!-- ---------- DASHBOARD ---------- -->
+        <section id="view-dashboard" class="view space-y-6 lg:space-y-8">
+
+          <div class="hidden lg:block">
+            <h2 class="font-display font-semibold text-2xl text-navy-800">Hola, Joaquín 👋</h2>
+            <p class="text-gray-500 mt-1">¿Qué necesitas agendar hoy?</p>
+          </div>
+
+          <!-- Banner destacado -->
+          <button onclick="openSpecialists('psicologia')" class="w-full text-left bg-gradient-to-br lg:bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-4 lg:p-8 shadow-card relative overflow-hidden lg:flex lg:items-center lg:justify-between">
+            <div class="relative z-10 lg:max-w-lg">
+              <span class="inline-block bg-white/20 text-white text-[11px] lg:text-xs font-semibold px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full mb-2 lg:mb-3">Alta demanda esta semana</span>
+              <h2 class="text-white font-display font-semibold text-lg lg:text-2xl leading-snug">Atención Psicológica</h2>
+              <p class="text-orange-50 text-sm lg:text-base mt-1 lg:mt-2 pr-14 lg:pr-0">Priorizamos horas para estudiantes en período de estrés académico. Agenda con atención inmediata.</p>
+              <span class="inline-flex items-center gap-1 lg:gap-2 mt-3 lg:mt-4 text-white text-sm lg:text-base font-semibold lg:bg-white/15 lg:px-4 lg:py-2 lg:rounded-xl">Agendar ahora
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
+              </span>
+            </div>
+            <div class="absolute -right-3 -bottom-3 lg:static lg:relative lg:z-0 text-6xl lg:text-9xl opacity-25 lg:opacity-20">🧠</div>
+          </button>
+
+          <!-- Servicios -->
+          <div id="servicios-section">
+            <h3 class="font-display font-semibold text-navy-800 text-base lg:text-lg mb-3 lg:mb-4">Servicios disponibles</h3>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              <button onclick="openSpecialists('psicologia')" class="bg-white rounded-2xl p-4 lg:p-5 shadow-card text-left active:scale-[.98] transition lg:hover:-translate-y-0.5">
+                <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-navy-50 flex items-center justify-center text-xl lg:text-2xl mb-3 lg:mb-4">🧩</div>
+                <p class="font-semibold text-navy-800 text-sm lg:text-base">Psicología</p>
+                <p class="text-xs text-gray-500 mt-0.5 lg:mt-1">Apoyo emocional</p>
+              </button>
+              <button onclick="openSpecialists('dental')" class="bg-white rounded-2xl p-4 lg:p-5 shadow-card text-left active:scale-[.98] transition lg:hover:-translate-y-0.5">
+                <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-navy-50 flex items-center justify-center text-xl lg:text-2xl mb-3 lg:mb-4">🦷</div>
+                <p class="font-semibold text-navy-800 text-sm lg:text-base">Servicio Dental</p>
+                <p class="text-xs text-gray-500 mt-0.5 lg:mt-1">Odontología general</p>
+              </button>
+              <button onclick="openSpecialists('medico')" class="bg-white rounded-2xl p-4 lg:p-5 shadow-card text-left active:scale-[.98] transition lg:hover:-translate-y-0.5">
+                <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-navy-50 flex items-center justify-center text-xl lg:text-2xl mb-3 lg:mb-4">🩺</div>
+                <p class="font-semibold text-navy-800 text-sm lg:text-base">Servicio Médico</p>
+                <p class="text-xs text-gray-500 mt-0.5 lg:mt-1">Medicina general</p>
+              </button>
+              <button onclick="openSpecialists('kinesiologia')" class="bg-white rounded-2xl p-4 lg:p-5 shadow-card text-left active:scale-[.98] transition lg:hover:-translate-y-0.5">
+                <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-navy-50 flex items-center justify-center text-xl lg:text-2xl mb-3 lg:mb-4">🦵</div>
+                <p class="font-semibold text-navy-800 text-sm lg:text-base">Kinesiología</p>
+                <p class="text-xs text-gray-500 mt-0.5 lg:mt-1">Rehabilitación física</p>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-6">
+            <!-- Mis Horas -->
+            <div id="horas-section" class="lg:col-span-2">
+              <h3 class="font-display font-semibold text-navy-800 text-base lg:text-lg mb-3 lg:mb-4">Mis Horas</h3>
+              <div id="mis-horas-container">
+                <div id="cita-card" class="bg-white rounded-2xl p-4 lg:p-5 shadow-card border-l-4 border-orange-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p id="cita-servicio" class="text-xs font-semibold text-orange-600 uppercase tracking-wide">Kinesiología</p>
+                    <p id="cita-nombre" class="font-display font-semibold text-navy-800 mt-0.5">Klgo. Matías Rojas</p>
+                    <p id="cita-fecha" class="text-sm text-gray-500 mt-1">Jueves 04 de septiembre · 11:30</p>
+                  </div>
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span id="cita-modalidad" class="text-[11px] lg:text-xs font-semibold bg-navy-50 text-navy-700 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full">Presencial</span>
+                    <button onclick="openCancelModal()" class="text-sm font-semibold text-orange-600 border border-orange-200 rounded-xl px-4 py-2 hover:bg-orange-50 active:bg-orange-50 whitespace-nowrap">Anular hora</button>
+                  </div>
+                </div>
+                <div id="sin-horas" class="hidden bg-white rounded-2xl p-6 lg:p-8 shadow-card text-center">
+                  <p class="text-3xl mb-2">🗓️</p>
+                  <p class="text-sm text-gray-500">No tienes horas próximas agendadas.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Accesos a trámites -->
+            <div>
+              <h3 class="font-display font-semibold text-navy-800 text-base lg:text-lg mb-3 lg:mb-4">Trámites y Beneficios</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <button onclick="showView('view-socioeconomico')" class="bg-white rounded-2xl p-3 lg:p-4 shadow-card text-left"><div class="text-lg lg:text-xl mb-2">📋</div><p class="text-xs font-semibold text-navy-800 leading-tight">Antecedentes Socioeconómicos</p></button>
+                <button onclick="showView('view-declaracion')" class="bg-white rounded-2xl p-3 lg:p-4 shadow-card text-left"><div class="text-lg lg:text-xl mb-2">✍️</div><p class="text-xs font-semibold text-navy-800 leading-tight">Declaración</p></button>
+                <button onclick="showView('view-solicitudes')" class="bg-white rounded-2xl p-3 lg:p-4 shadow-card text-left"><div class="text-lg lg:text-xl mb-2">💳</div><p class="text-xs font-semibold text-navy-800 leading-tight">Solicitudes / Postulaciones</p></button>
+                <button onclick="showView('view-tne')" class="bg-white rounded-2xl p-3 lg:p-4 shadow-card text-left"><div class="text-lg lg:text-xl mb-2">🪪</div><p class="text-xs font-semibold text-navy-800 leading-tight">TNE</p></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- ESPECIALISTAS ---------- -->
+        <section id="view-specialists" class="view hidden space-y-3 lg:space-y-5">
+          <div class="hidden lg:block">
+            <h2 id="especialistas-titulo" class="font-display font-semibold text-2xl text-navy-800">Especialistas</h2>
+            <p class="text-gray-500 mt-1">Elige un profesional para ver sus horarios disponibles.</p>
+          </div>
+          <p class="lg:hidden text-sm text-gray-500 -mt-1 mb-2">Elige un profesional para ver sus horarios disponibles.</p>
+          <div id="specialists-list" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4"></div>
+        </section>
+
+        <!-- ---------- CALENDARIO ---------- -->
+        <section id="view-calendar" class="view hidden space-y-5">
+          <div class="hidden lg:block">
+            <h2 class="font-display font-semibold text-2xl text-navy-800">Selecciona tu hora</h2>
+          </div>
+
+          <p id="calendar-summary" class="text-sm lg:text-base bg-navy-50 lg:bg-transparent rounded-xl lg:rounded-none p-3 lg:p-0 text-navy-700 lg:text-gray-500 lg:mt-1"></p>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 items-start">
+            <div class="lg:col-span-2 space-y-5 lg:space-y-6">
+              <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5">
+                <p class="text-sm font-semibold text-navy-800 mb-3">Modalidad</p>
+                <div class="flex gap-2 lg:gap-3 lg:max-w-xs">
+                  <button id="mod-presencial" onclick="selectModality('Presencial')" class="flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-orange-500 bg-orange-500 text-white">Presencial</button>
+                  <button id="mod-online" onclick="selectModality('Online')" class="flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-500">Online</button>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5">
+                <p class="text-sm font-semibold text-navy-800 mb-3">Selecciona un día</p>
+                <div id="day-selector" class="day-chip flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:overflow-visible lg:pb-0"></div>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5">
+                <p class="text-sm font-semibold text-navy-800 mb-3">Bloques disponibles</p>
+                <div id="time-selector" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+              </div>
+            </div>
+
+            <!-- Resumen: sticky en escritorio, solo el botón en móvil -->
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 lg:sticky lg:top-4 space-y-4">
+              <p class="hidden lg:block text-xs font-semibold text-gray-400 uppercase tracking-wide">Resumen de tu reserva</p>
+              <div id="resumen-especialista" class="hidden lg:flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-navy-800 text-white flex items-center justify-center font-display font-semibold shrink-0" id="resumen-avatar"></div>
+                <div>
+                  <p id="resumen-nombre" class="font-semibold text-navy-800 text-sm">—</p>
+                  <p id="resumen-servicio" class="text-xs text-gray-500">—</p>
+                </div>
+              </div>
+              <div class="hidden lg:block text-sm space-y-2 border-t border-gray-100 pt-3">
+                <div class="flex justify-between"><span class="text-gray-400">Día</span><span id="resumen-dia" class="font-semibold text-navy-800 text-right">Sin seleccionar</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Hora</span><span id="resumen-hora" class="font-semibold text-navy-800">Sin seleccionar</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Modalidad</span><span id="resumen-modalidad" class="font-semibold text-navy-800">Presencial</span></div>
+              </div>
+              <button id="btn-confirmar" onclick="confirmBooking()" disabled class="w-full py-3.5 rounded-2xl font-semibold text-sm bg-gray-200 text-gray-400 transition">Selecciona día y hora</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- COMPROBANTE ---------- -->
+        <section id="view-confirmation" class="view hidden">
+          <div class="lg:max-w-xl lg:mx-auto">
+            <div class="flex flex-col items-center text-center mt-4 mb-6 lg:mb-8">
+              <div class="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <h2 class="font-display font-semibold text-xl lg:text-2xl text-navy-800">¡Hora reservada con éxito!</h2>
+              <p class="text-sm lg:text-base text-gray-500 mt-1 lg:mt-2 lg:max-w-sm">Este comprobante queda disponible en la plataforma, en la sección "Mis Horas". No enviamos correos ni SMS.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-card p-5 lg:p-6 space-y-4 lg:space-y-5">
+              <div class="flex justify-between items-center border-b border-gray-100 pb-3 lg:pb-4">
+                <span class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Comprobante de reserva</span>
+                <span class="text-xs bg-navy-50 text-navy-700 font-semibold px-2 lg:px-2.5 py-1 rounded-full">N° 2026-0817</span>
+              </div>
+              <div class="grid grid-cols-2 gap-y-3 lg:gap-y-4 gap-x-4 text-sm">
+                <div><p class="text-gray-400 text-xs">Profesional</p><p id="conf-nombre" class="font-semibold text-navy-800">—</p></div>
+                <div><p class="text-gray-400 text-xs">Servicio</p><p id="conf-servicio" class="font-semibold text-navy-800">—</p></div>
+                <div><p class="text-gray-400 text-xs">Fecha</p><p id="conf-fecha" class="font-semibold text-navy-800">—</p></div>
+                <div><p class="text-gray-400 text-xs">Hora</p><p id="conf-hora" class="font-semibold text-navy-800">—</p></div>
+                <div><p class="text-gray-400 text-xs">Modalidad</p><p id="conf-modalidad" class="font-semibold text-navy-800">—</p></div>
+                <div><p class="text-gray-400 text-xs">Lugar</p><p id="conf-lugar" class="font-semibold text-navy-800">—</p></div>
+              </div>
+            </div>
+
+            <button onclick="goHome()" class="w-full py-3.5 rounded-2xl font-semibold text-sm bg-navy-800 text-white mt-6">Volver al inicio</button>
+          </div>
+        </section>
+
+        <!-- ---------- ANTECEDENTES SOCIOECONÓMICOS ---------- -->
+        <section id="view-socioeconomico" class="view hidden space-y-4 lg:space-y-5">
+          <div class="hidden lg:block">
+            <h2 class="font-display font-semibold text-2xl text-navy-800">Antecedentes Socioeconómicos</h2>
+            <p class="text-gray-500 mt-1 max-w-xl">Esta información se usa para calcular tus beneficios estudiantiles y es visible solo para ti.</p>
+          </div>
+          <p class="lg:hidden text-sm text-gray-500">Esta información se usa para calcular tus beneficios estudiantiles y es visible solo para ti.</p>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5"><p class="text-xs text-gray-400 mb-1">Tramo FUAS</p><p class="font-display font-semibold text-navy-800 text-lg lg:text-xl">30%</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5"><p class="text-xs text-gray-400 mb-1">Quintil socioeconómico</p><p class="font-display font-semibold text-navy-800 text-lg lg:text-xl">Quintil II</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5"><p class="text-xs text-gray-400 mb-1">Grupo familiar</p><p class="font-display font-semibold text-navy-800 text-lg lg:text-xl">4 integrantes</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5"><p class="text-xs text-gray-400 mb-1">Estado</p><p class="font-display font-semibold text-orange-600 text-lg lg:text-xl">Vigente 2026</p></div>
+          </div>
+          <button onclick="showToast('Esta función estará disponible próximamente.')" class="w-full lg:w-auto py-3.5 lg:py-3 px-6 rounded-2xl font-semibold text-sm bg-navy-800 text-white">Actualizar antecedentes</button>
+        </section>
+
+        <!-- ---------- DECLARACIÓN ---------- -->
+        <section id="view-declaracion" class="view hidden space-y-4 lg:space-y-5">
+          <h2 class="hidden lg:block font-display font-semibold text-2xl text-navy-800">Declaración</h2>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-6">
+              <p class="font-display font-semibold text-navy-800 mb-2">Declaración Jurada Simple</p>
+              <p class="text-sm text-gray-500 leading-relaxed">Declaro que la información socioeconómica y personal entregada a la universidad es fidedigna y podrá ser verificada por la institución. Esta declaración se firma únicamente de forma electrónica dentro de la plataforma.</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-6 space-y-4">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input id="chk-declaracion" type="checkbox" onchange="toggleDeclaracion()" class="mt-0.5 w-5 h-5 accent-orange-500 shrink-0">
+                <span class="text-sm text-gray-600">Declaro que la información entregada es verídica y actualizada.</span>
+              </label>
+              <button id="btn-firmar" onclick="firmarDeclaracion()" disabled class="w-full py-3.5 rounded-2xl font-semibold text-sm bg-gray-200 text-gray-400">Firmar declaración electrónica</button>
+              <p id="declaracion-estado" class="hidden text-center text-sm text-orange-600 font-semibold">✔ Declaración firmada el 01-09-2026</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- SOLICITUDES / POSTULACIONES ---------- -->
+        <section id="view-solicitudes" class="view hidden space-y-3 lg:space-y-5">
+          <div class="hidden lg:block">
+            <h2 class="font-display font-semibold text-2xl text-navy-800">Solicitudes / Postulaciones</h2>
+            <p class="text-gray-500 mt-1">Revisa el estado de tus solicitudes y postulaciones a beneficios.</p>
+          </div>
+          <p class="lg:hidden text-sm text-gray-500 mb-1">Revisa el estado de tus solicitudes y postulaciones a beneficios.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
+            <button onclick="showView('view-cae')" class="w-full text-left bg-white rounded-2xl shadow-card p-4 lg:p-5 lg:hover:-translate-y-0.5 transition">
+              <div class="flex justify-between items-start gap-3">
+                <div>
+                  <p class="font-semibold text-navy-800 text-sm lg:text-base leading-snug">Solicitud Monto Asignación<br class="lg:hidden">Crédito Aval del Estado</p>
+                  <p class="text-xs text-gray-400 mt-1">Última actualización: 28-08-2026</p>
+                </div>
+                <span class="text-[11px] lg:text-xs font-semibold bg-orange-50 text-orange-600 px-2 lg:px-2.5 py-1 rounded-full shrink-0">Pendiente</span>
+              </div>
+            </button>
+            <div class="w-full text-left bg-white rounded-2xl shadow-card p-4 lg:p-5 opacity-70">
+              <div class="flex justify-between items-start gap-3">
+                <div>
+                  <p class="font-semibold text-navy-800 text-sm lg:text-base leading-snug">Postulación Beca de Alimentación</p>
+                  <p class="text-xs text-gray-400 mt-1">Proceso 2026 cerrado</p>
+                </div>
+                <span class="text-[11px] lg:text-xs font-semibold bg-navy-50 text-navy-700 px-2 lg:px-2.5 py-1 rounded-full shrink-0">Aprobada</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- DETALLE CAE ---------- -->
+        <section id="view-cae" class="view hidden space-y-4 lg:space-y-5">
+          <h2 class="hidden lg:block font-display font-semibold text-2xl text-navy-800">Crédito Aval del Estado</h2>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-6 space-y-3 lg:space-y-4">
+              <p class="font-display font-semibold text-navy-800 lg:hidden">Crédito Aval del Estado</p>
+              <p class="text-sm text-gray-500 leading-relaxed">Solicita el monto de asignación asociado a tu Crédito con Aval del Estado (CAE) para el año académico vigente.</p>
+              <label class="block text-xs text-gray-400 font-semibold uppercase">Monto solicitado (arancel anual)</label>
+              <input type="text" value="$ 2.450.000" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-navy-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-400">
+              <div class="flex items-center gap-2 pt-1">
+                <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                <span class="text-sm text-gray-500">Estado actual: <span class="font-semibold text-navy-800">En revisión</span></span>
+              </div>
+              <button id="btn-cae" onclick="enviarCAE()" class="w-full py-3.5 lg:py-3 rounded-2xl lg:rounded-xl font-semibold text-sm bg-orange-500 text-white">Enviar solicitud</button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-6">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Estado de la solicitud</p>
+              <div class="space-y-4">
+                <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-orange-500"></span><span class="text-sm font-semibold text-navy-800">Postulada</span></div>
+                <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-orange-500"></span><span class="text-sm font-semibold text-navy-800">En revisión</span></div>
+                <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-gray-200"></span><span class="text-sm text-gray-400">Resuelta</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- TNE ---------- -->
+        <section id="view-tne" class="view hidden space-y-4 lg:space-y-5">
+          <h2 class="hidden lg:block font-display font-semibold text-2xl text-navy-800">TNE · Tarjeta Nacional Estudiantil</h2>
+          <div class="flex gap-2 bg-white rounded-xl p-1 shadow-card lg:max-w-sm">
+            <button id="tab-primer" onclick="switchTneTab('primer')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-navy-800 text-white">Primer año</button>
+            <button id="tab-superior" onclick="switchTneTab('superior')" class="flex-1 py-2 rounded-lg text-sm font-semibold text-gray-500">Cursos superiores</button>
+          </div>
+
+          <div id="tne-primer" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4">
+            <p class="text-sm text-gray-500 lg:hidden">Pasos para obtener tu Tarjeta Nacional Estudiantil por primera vez.</p>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">1</span><p class="text-sm text-gray-600">Carga tu fotografía y documentación en el portal TNE.gob.cl</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">2</span><p class="text-sm text-gray-600">Espera la validación de matrícula por parte de la universidad.</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">3</span><p class="text-sm text-gray-600">Retira tu tarjeta física en el punto de atención del Campus.</p></div>
+          </div>
+
+          <div id="tne-superior" class="hidden space-y-3 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4">
+            <p class="text-sm text-gray-500 lg:hidden">Información para estudiantes de cursos superiores.</p>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-navy-700 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">✓</span><p class="text-sm text-gray-600">Tu TNE se revalida automáticamente al confirmar matrícula.</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-navy-700 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">✓</span><p class="text-sm text-gray-600">Retira el sticker de revalidación en el Campus a partir de marzo.</p></div>
+            <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 flex lg:block gap-3"><span class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-navy-700 text-white text-xs font-bold flex items-center justify-center shrink-0 lg:mb-3">✓</span><p class="text-sm text-gray-600">Si perdiste tu tarjeta, solicita el duplicado en Bienestar Estudiantil.</p></div>
+          </div>
+        </section>
+
+        <!-- ---------- PERFIL ---------- -->
+        <section id="view-perfil" class="view hidden space-y-4 lg:space-y-5 lg:max-w-2xl">
+          <h2 class="hidden lg:block font-display font-semibold text-2xl text-navy-800">Mi Perfil</h2>
+          <div class="bg-white rounded-2xl shadow-card p-5 lg:p-6 flex items-center gap-4">
+            <div class="w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-navy-800 text-white flex items-center justify-center font-display font-semibold text-lg lg:text-xl">JP</div>
+            <div>
+              <p class="font-display font-semibold text-navy-800 lg:text-lg">Joaquín Pérez</p>
+              <p class="text-xs lg:text-sm text-gray-400">Ingeniería Civil Informática</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-card divide-y divide-gray-100">
+            <div class="flex justify-between items-center p-4"><span class="text-sm text-gray-500">RUT</span><span class="text-sm font-semibold text-navy-800">19.xxx.xxx-x</span></div>
+            <div class="flex justify-between items-center p-4"><span class="text-sm text-gray-500">Campus</span><span class="text-sm font-semibold text-navy-800">Campus Central</span></div>
+            <div class="flex justify-between items-center p-4"><span class="text-sm text-gray-500">Año de ingreso</span><span class="text-sm font-semibold text-navy-800">2024</span></div>
+          </div>
+          <p class="text-xs text-gray-400 text-center lg:text-left px-6 lg:px-0">Tus datos son privados y se usan solo dentro de SIREB. No compartimos tu información por correo ni SMS.</p>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================== BOTTOM NAV (móvil) ===================== -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 flex justify-around items-center h-[68px] safe-bottom z-20 px-2">
+    <button onclick="goHome()" data-nav="home" class="nav-btn flex flex-col items-center gap-1 text-orange-500 w-16">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1V10"/></svg>
+      <span class="text-[10px] font-semibold">Inicio</span>
+    </button>
+    <button onclick="openDrawer()" data-nav="tramites" class="nav-btn flex flex-col items-center gap-1 text-gray-400 w-16">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 3h14a1 1 0 011 1v16l-4-2-3 2-3-2-3 2-3-2V4a1 1 0 011-1z"/></svg>
+      <span class="text-[10px] font-semibold">Trámites</span>
+    </button>
+    <button onclick="showView('view-dashboard'); scrollToHoras();" data-nav="horas" class="nav-btn flex flex-col items-center gap-1 text-gray-400 w-16">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span class="text-[10px] font-semibold">Mis Horas</span>
+    </button>
+    <button onclick="showView('view-perfil')" data-nav="perfil" class="nav-btn flex flex-col items-center gap-1 text-gray-400 w-16">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 21c1.5-4 6-6 8-6s6.5 2 8 6"/></svg>
+      <span class="text-[10px] font-semibold">Perfil</span>
+    </button>
+  </nav>
+
+  <!-- ===================== DRAWER (móvil) ===================== -->
+  <div id="drawer-overlay" onclick="closeDrawer()" class="lg:hidden hidden fixed inset-0 bg-navy-900/50 z-30"></div>
+  <div id="drawer" class="lg:hidden fixed top-0 right-0 h-full w-[82%] max-w-xs bg-white z-40 translate-x-full transition-transform duration-300 ease-out shadow-2xl overflow-y-auto">
+    <div class="bg-navy-800 text-white p-5 flex items-center justify-between">
+      <p class="font-display font-semibold text-lg">Trámites</p>
+      <button onclick="closeDrawer()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-4 space-y-2">
+      <button onclick="navFromDrawer('view-dashboard')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-left">
+        <span class="text-lg">🏠</span><span class="text-sm font-semibold text-navy-800">Inicio</span>
+      </button>
+      <button onclick="navFromDrawer('view-socioeconomico')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-left">
+        <span class="text-lg">📋</span><span class="text-sm font-semibold text-navy-800">Antecedentes Socioeconómicos</span>
+      </button>
+
+      <!-- Dropdown: Declaración -->
+      <div class="rounded-xl overflow-hidden">
+        <button onclick="toggleAccordion('acc-declaracion-m')" class="w-full flex items-center justify-between p-3 hover:bg-gray-50">
+          <span class="flex items-center gap-3"><span class="text-lg">✍️</span><span class="text-sm font-semibold text-navy-800">Declaración</span></span>
+          <svg id="acc-declaracion-m-chevron" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="acc-declaracion-m" class="hidden pl-11 pr-3 pb-2 space-y-1">
+          <button onclick="navFromDrawer('view-declaracion')" class="w-full text-left text-sm text-gray-600 py-2 hover:text-orange-600">Declaración de Antecedentes</button>
+          <button onclick="navFromDrawer('view-declaracion')" class="w-full text-left text-sm text-gray-600 py-2 hover:text-orange-600">Declaración de Residencia</button>
+        </div>
+      </div>
+
+      <!-- Dropdown: Solicitudes/Postulaciones -->
+      <div class="rounded-xl overflow-hidden">
+        <button onclick="toggleAccordion('acc-solicitudes-m')" class="w-full flex items-center justify-between p-3 hover:bg-gray-50">
+          <span class="flex items-center gap-3"><span class="text-lg">💳</span><span class="text-sm font-semibold text-navy-800">Solicitudes/Postulaciones</span></span>
+          <svg id="acc-solicitudes-m-chevron" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="acc-solicitudes-m" class="hidden pl-11 pr-3 pb-2 space-y-1">
+          <button onclick="navFromDrawer('view-cae')" class="w-full text-left text-sm text-gray-600 py-2 hover:text-orange-600">Solicitud Monto Asignación Crédito Aval del Estado</button>
+          <button onclick="navFromDrawer('view-solicitudes')" class="w-full text-left text-sm text-gray-600 py-2 hover:text-orange-600">Ver todas mis solicitudes</button>
+        </div>
+      </div>
+
+      <button onclick="navFromDrawer('view-tne')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-left">
+        <span class="text-lg">🪪</span><span class="text-sm font-semibold text-navy-800">TNE: Información alumnos primer año y cursos superiores</span>
+      </button>
+
+      <div class="h-px bg-gray-100 my-2"></div>
+
+      <button onclick="navFromDrawer('view-perfil')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-left">
+        <span class="text-lg">👤</span><span class="text-sm font-semibold text-navy-800">Mi Perfil</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL CANCELAR ===== -->
+  <div id="modal-overlay" class="hidden fixed inset-0 bg-navy-900/50 z-50 items-center justify-center px-6">
+    <div class="bg-white rounded-2xl p-5 lg:p-6 w-full max-w-xs lg:max-w-sm text-center">
+      <p class="text-3xl mb-3">⚠️</p>
+      <p class="font-display font-semibold text-navy-800 mb-1 lg:text-lg">¿Anular esta hora?</p>
+      <p class="text-sm text-gray-500 mb-5">Esta acción liberará el cupo y no podrás deshacerla.</p>
+      <div class="flex gap-2 lg:gap-3">
+        <button onclick="closeCancelModal()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-600">Volver</button>
+        <button onclick="confirmCancel()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-orange-500 text-white">Sí, anular</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast" class="hidden fixed bottom-24 inset-x-4 lg:inset-x-auto lg:left-1/2 lg:-translate-x-1/2 lg:bottom-6 lg:w-auto bg-navy-800 text-white text-sm font-medium px-4 lg:px-5 py-3 rounded-xl shadow-2xl z-50 text-center"></div>
+
+<script>
+  // ---------------- DATA ----------------
+  const serviceData = {
+    psicologia: { title: 'Psicología', specialists: [
+      { name: 'Psic. Camila Herrera', role: 'Psicología clínica', tag: 'Hoy, 15:30', modality: 'Presencial / Online' },
+      { name: 'Psic. Rodrigo Salas', role: 'Orientación vocacional', tag: 'Mañana, 10:00', modality: 'Online' },
+      { name: 'Psic. Fernanda Iturra', role: 'Manejo de ansiedad', tag: 'Hoy, 17:00', modality: 'Presencial' },
+    ]},
+    dental: { title: 'Servicio Dental', specialists: [
+      { name: 'Dra. Valentina Muñoz', role: 'Odontología general', tag: 'Hoy, 16:00', modality: 'Presencial' },
+      { name: 'Dr. Ignacio Vera', role: 'Urgencias dentales', tag: 'Mañana, 09:00', modality: 'Presencial' },
+    ]},
+    medico: { title: 'Servicio Médico', specialists: [
+      { name: 'Dr. Sebastián Contreras', role: 'Medicina general', tag: 'Hoy, 12:30', modality: 'Presencial' },
+      { name: 'Dra. Antonia Reyes', role: 'Medicina general', tag: 'Mañana, 08:30', modality: 'Presencial' },
+    ]},
+    kinesiologia: { title: 'Kinesiología', specialists: [
+      { name: 'Klgo. Matías Rojas', role: 'Rehabilitación deportiva', tag: 'Hoy, 11:30', modality: 'Presencial' },
+      { name: 'Klga. Paula Fuentes', role: 'Rehabilitación traumatológica', tag: 'Mañana, 14:00', modality: 'Presencial' },
+    ]},
+  };
+
+  const timeSlots = ['09:00','09:30','10:00','10:30','11:00','11:30','15:00','15:30','16:00','16:30','17:00','17:30'];
+  const occupiedIdx = [2,5,9];
+
+  let viewStack = ['view-dashboard'];
+  let booking = { serviceId:null, serviceTitle:null, specialist:null, day:null, time:null, modality:'Presencial' };
+
+  const headerMap = {
+    'view-dashboard':      { mobile:'Hola, Joaquín 👋', mobileSub:'¿Qué necesitas agendar hoy?', desktop:'Inicio' },
+    'view-specialists':    { mobile:'Especialistas', mobileSub:'', desktop:'Especialistas' },
+    'view-calendar':       { mobile:'Selecciona tu hora', mobileSub:'', desktop:'Selecciona tu hora' },
+    'view-confirmation':   { mobile:'Reserva confirmada', mobileSub:'', desktop:'Reserva confirmada' },
+    'view-socioeconomico': { mobile:'Antecedentes Socioeconómicos', mobileSub:'', desktop:'Antecedentes Socioeconómicos' },
+    'view-declaracion':    { mobile:'Declaración', mobileSub:'', desktop:'Declaración' },
+    'view-solicitudes':    { mobile:'Solicitudes/Postulaciones', mobileSub:'', desktop:'Solicitudes/Postulaciones' },
+    'view-cae':            { mobile:'Crédito Aval del Estado', mobileSub:'', desktop:'Crédito Aval del Estado' },
+    'view-tne':            { mobile:'TNE', mobileSub:'', desktop:'TNE' },
+    'view-perfil':         { mobile:'Mi Perfil', mobileSub:'', desktop:'Mi Perfil' },
+  };
+
+  // ---------------- NAVEGACIÓN ----------------
+  function showView(id, opts={push:true}){
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    if(opts.push !== false){ viewStack.push(id); }
+
+    const h = headerMap[id];
+    document.getElementById('header-title').textContent = h.mobile;
+    document.getElementById('header-subtitle').textContent = h.mobileSub;
+    document.getElementById('header-subtitle').classList.toggle('hidden', !h.mobileSub);
+    document.getElementById('page-title').textContent = h.desktop;
+
+    document.getElementById('btn-back').classList.toggle('hidden', id === 'view-dashboard');
+    document.getElementById('btn-back').classList.toggle('flex', id !== 'view-dashboard');
+    document.getElementById('btn-back-desktop').classList.toggle('hidden', id === 'view-dashboard');
+    document.getElementById('btn-back-desktop').classList.toggle('flex', id !== 'view-dashboard');
+
+    document.getElementById('content-scroll').scrollTop = 0;
+    window.scrollTo(0,0);
+    updateNavState(id);
+  }
+  function goBack(){
+    if(viewStack.length>1){ viewStack.pop(); showView(viewStack[viewStack.length-1], {push:false}); }
+    else showView('view-dashboard', {push:false});
+  }
+  function goHome(){ viewStack=['view-dashboard']; showView('view-dashboard', {push:false}); closeDrawer(); }
+  function scrollToHoras(){ setTimeout(()=>{ document.getElementById('horas-section').scrollIntoView({behavior:'smooth', block:'center'}); }, 50); }
+  function scrollToServicios(){ setTimeout(()=>{ document.getElementById('servicios-section').scrollIntoView({behavior:'smooth', block:'center'}); }, 50); }
+
+  function updateNavState(id){
+    // Barra inferior (móvil)
+    document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('text-orange-500'); b.classList.add('text-gray-400'); });
+    let key = 'home';
+    if(id==='view-perfil') key='perfil';
+    else if(['view-socioeconomico','view-declaracion','view-solicitudes','view-cae','view-tne'].includes(id)) key='tramites';
+    const navBtn = document.querySelector(`.nav-btn[data-nav="${key}"]`);
+    if(navBtn){ navBtn.classList.remove('text-gray-400'); navBtn.classList.add('text-orange-500'); }
+
+    // Sidebar (escritorio)
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('bg-white/10'));
+    const sideBtn = document.querySelector(`.nav-item[data-nav="${id}"]`);
+    if(sideBtn){ sideBtn.classList.add('bg-white/10'); }
+  }
+
+  function openDrawer(){
+    document.getElementById('drawer-overlay').classList.remove('hidden');
+    document.getElementById('drawer').classList.remove('translate-x-full');
+  }
+  function closeDrawer(){
+    document.getElementById('drawer-overlay').classList.add('hidden');
+    document.getElementById('drawer').classList.add('translate-x-full');
+  }
+  function navFromDrawer(viewId){ closeDrawer(); showView(viewId); }
+  function toggleAccordion(id){
+    document.getElementById(id).classList.toggle('hidden');
+    document.getElementById(id+'-chevron').classList.toggle('rotate-180');
+  }
+
+  // ---------------- ESPECIALISTAS ----------------
+  function openSpecialists(serviceId){
+    booking.serviceId = serviceId;
+    booking.serviceTitle = serviceData[serviceId].title;
+    headerMap['view-specialists'].mobile = serviceData[serviceId].title;
+    document.getElementById('especialistas-titulo').textContent = serviceData[serviceId].title;
+    const list = document.getElementById('specialists-list');
+    list.innerHTML = serviceData[serviceId].specialists.map(sp => `
+      <div class="bg-white rounded-2xl shadow-card p-4 lg:p-5 lg:flex lg:flex-col">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-navy-800 text-white flex items-center justify-center font-display font-semibold shrink-0">${sp.name.split(' ').slice(-2).map(n=>n[0]).join('')}</div>
+          <div class="min-w-0">
+            <p class="font-semibold text-navy-800 text-sm truncate">${sp.name}</p>
+            <p class="text-xs text-gray-500">${sp.role}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${sp.modality}</p>
+          </div>
+        </div>
+        <span class="inline-block mt-3 lg:mt-4 text-[11px] lg:text-xs font-semibold bg-orange-50 text-orange-600 px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full lg:w-fit">🟠 Disponibilidad Inmediata · Próxima hora: ${sp.tag}</span>
+        <button onclick='openCalendar(${JSON.stringify(sp)})' class="w-full mt-3 lg:mt-4 py-2.5 rounded-xl text-sm font-semibold bg-navy-800 text-white hover:bg-navy-700 transition">Reservar</button>
+      </div>
+    `).join('');
+    showView('view-specialists');
+  }
+
+  // ---------------- CALENDARIO ----------------
+  function openCalendar(specialist){
+    booking.specialist = specialist;
+    booking.day = null; booking.time = null;
+    document.getElementById('calendar-summary').innerHTML = `<span class="font-semibold">${specialist.name}</span> · ${booking.serviceTitle}`;
+    document.getElementById('resumen-avatar').textContent = specialist.name.split(' ').slice(-2).map(n=>n[0]).join('');
+    document.getElementById('resumen-nombre').textContent = specialist.name;
+    document.getElementById('resumen-servicio').textContent = booking.serviceTitle;
+    document.getElementById('resumen-dia').textContent = 'Sin seleccionar';
+    document.getElementById('resumen-hora').textContent = 'Sin seleccionar';
+    selectModality('Presencial');
+    renderDays();
+    renderTimes();
+    updateConfirmButton();
+    showView('view-calendar');
+  }
+
+  function renderDays(){
+    const cont = document.getElementById('day-selector');
+    const fmtWeekday = new Intl.DateTimeFormat('es-CL', {weekday:'short'});
+    const today = new Date();
+    let html = '';
+    for(let i=0;i<6;i++){
+      const d = new Date(today); d.setDate(today.getDate()+i);
+      const label = i===0 ? 'Hoy' : fmtWeekday.format(d).replace('.','');
+      const full = d.toLocaleDateString('es-CL', {weekday:'long', day:'numeric', month:'long'});
+      html += `<button data-day="${i}" onclick='selectDay(${i}, "${full}", this)' class="day-btn shrink-0 w-14 lg:w-auto py-2.5 lg:py-3 rounded-xl border-2 border-gray-200 text-center ${i===0?'border-orange-500 bg-orange-500 text-white':'text-navy-700'}">
+        <p class="text-[10px] uppercase font-semibold">${label}</p>
+        <p class="text-sm lg:text-base font-bold">${d.getDate()}</p>
+      </button>`;
+    }
+    cont.innerHTML = html;
+    const fullToday = today.toLocaleDateString('es-CL', {weekday:'long', day:'numeric', month:'long'});
+    booking.day = fullToday;
+    document.getElementById('resumen-dia').textContent = fullToday;
+  }
+
+  function selectDay(i, full, btn){
+    document.querySelectorAll('.day-btn').forEach(b=>{ b.classList.remove('border-orange-500','bg-orange-500','text-white'); b.classList.add('border-gray-200','text-navy-700'); });
+    btn.classList.remove('border-gray-200','text-navy-700');
+    btn.classList.add('border-orange-500','bg-orange-500','text-white');
+    booking.day = full;
+    document.getElementById('resumen-dia').textContent = full;
+    updateConfirmButton();
+  }
+
+  function renderTimes(){
+    const cont = document.getElementById('time-selector');
+    cont.innerHTML = timeSlots.map((t,i)=>{
+      const disabled = occupiedIdx.includes(i);
+      return `<button ${disabled?'disabled':''} onclick='selectTime("${t}", this)' class="time-btn py-2.5 rounded-xl text-sm font-semibold border-2 ${disabled? 'border-gray-100 text-gray-300 line-through cursor-not-allowed' : 'border-gray-200 text-navy-700 hover:border-navy-300'}">${t}</button>`;
+    }).join('');
+  }
+
+  function selectTime(t, btn){
+    document.querySelectorAll('.time-btn').forEach(b=>{ if(!b.disabled){ b.classList.remove('border-orange-500','bg-orange-500','text-white'); b.classList.add('border-gray-200','text-navy-700'); }});
+    btn.classList.remove('border-gray-200','text-navy-700');
+    btn.classList.add('border-orange-500','bg-orange-500','text-white');
+    booking.time = t;
+    document.getElementById('resumen-hora').textContent = t;
+    updateConfirmButton();
+  }
+
+  function selectModality(m){
+    booking.modality = m;
+    const p = document.getElementById('mod-presencial');
+    const o = document.getElementById('mod-online');
+    if(m==='Presencial'){
+      p.className='flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-orange-500 bg-orange-500 text-white';
+      o.className='flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-500';
+    } else {
+      o.className='flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-orange-500 bg-orange-500 text-white';
+      p.className='flex-1 py-2 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-500';
+    }
+    document.getElementById('resumen-modalidad').textContent = m;
+  }
+
+  function updateConfirmButton(){
+    const btn = document.getElementById('btn-confirmar');
+    if(booking.day && booking.time){
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Reserva';
+      btn.className = 'w-full py-3.5 rounded-2xl font-semibold text-sm bg-orange-500 text-white hover:bg-orange-600 transition';
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Selecciona día y hora';
+      btn.className = 'w-full py-3.5 rounded-2xl font-semibold text-sm bg-gray-200 text-gray-400 transition';
+    }
+  }
+
+  // ---------------- CONFIRMACIÓN ----------------
+  function confirmBooking(){
+    document.getElementById('conf-nombre').textContent = booking.specialist.name;
+    document.getElementById('conf-servicio').textContent = booking.serviceTitle;
+    document.getElementById('conf-fecha').textContent = booking.day;
+    document.getElementById('conf-hora').textContent = booking.time;
+    document.getElementById('conf-modalidad').textContent = booking.modality;
+    document.getElementById('conf-lugar').textContent = booking.modality==='Presencial' ? 'Campus Central, Sala 204' : 'Enlace disponible en la plataforma';
+    updateMisHoras();
+    showView('view-confirmation');
+  }
+
+  function updateMisHoras(){
+    const card = document.getElementById('cita-card');
+    card.classList.remove('hidden'); card.classList.add('flex');
+    document.getElementById('sin-horas').classList.add('hidden');
+    document.getElementById('cita-servicio').textContent = booking.serviceTitle;
+    document.getElementById('cita-nombre').textContent = booking.specialist.name;
+    document.getElementById('cita-fecha').textContent = `${booking.day} · ${booking.time}`;
+    document.getElementById('cita-modalidad').textContent = booking.modality;
+  }
+
+  // ---------------- ANULAR HORA ----------------
+  function openCancelModal(){ document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById('modal-overlay').classList.add('flex'); }
+  function closeCancelModal(){ document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal-overlay').classList.remove('flex'); }
+  function confirmCancel(){
+    const card = document.getElementById('cita-card');
+    card.classList.add('hidden'); card.classList.remove('flex');
+    document.getElementById('sin-horas').classList.remove('hidden');
+    closeCancelModal();
+    showToast('Hora anulada correctamente.');
+  }
+
+  // ---------------- DECLARACIÓN ----------------
+  function toggleDeclaracion(){
+    const chk = document.getElementById('chk-declaracion');
+    const btn = document.getElementById('btn-firmar');
+    btn.disabled = !chk.checked;
+    btn.className = chk.checked
+      ? 'w-full py-3.5 rounded-2xl font-semibold text-sm bg-orange-500 text-white'
+      : 'w-full py-3.5 rounded-2xl font-semibold text-sm bg-gray-200 text-gray-400';
+  }
+  function firmarDeclaracion(){
+    document.getElementById('declaracion-estado').classList.remove('hidden');
+    document.getElementById('btn-firmar').classList.add('hidden');
+    showToast('Declaración firmada correctamente.');
+  }
+
+  // ---------------- CAE ----------------
+  function enviarCAE(){
+    const btn = document.getElementById('btn-cae');
+    btn.textContent = 'Solicitud enviada ✔';
+    btn.disabled = true;
+    btn.className = 'w-full py-3.5 lg:py-3 rounded-2xl lg:rounded-xl font-semibold text-sm bg-navy-100 text-navy-500';
+    showToast('Solicitud enviada correctamente.');
+  }
+
+  // ---------------- TNE ----------------
+  function switchTneTab(tab){
+    document.getElementById('tne-primer').classList.toggle('hidden', tab!=='primer');
+    document.getElementById('tne-superior').classList.toggle('hidden', tab!=='superior');
+    document.getElementById('tab-primer').className = tab==='primer' ? 'flex-1 py-2 rounded-lg text-sm font-semibold bg-navy-800 text-white' : 'flex-1 py-2 rounded-lg text-sm font-semibold text-gray-500';
+    document.getElementById('tab-superior').className = tab==='superior' ? 'flex-1 py-2 rounded-lg text-sm font-semibold bg-navy-800 text-white' : 'flex-1 py-2 rounded-lg text-sm font-semibold text-gray-500';
+  }
+
+  // ---------------- TOAST ----------------
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.add('hidden'), 2600);
+  }
+
+  // Estado inicial
+  updateNavState('view-dashboard');
+</script>
+</body>
+</html>
