@@ -1,35 +1,28 @@
-# frontend-sample-app
+# SIREB · Sistema de Reservas (MVP React)
+### INF-322: Diseño de Interfaces Usuarias · Universidad Técnica Federico Santa María
 
-Basic Frontend Development Environment to start an app with Webpack
+## Integrantes
+* Matías Acuña
+* Ariel Espinoza
+* Catalina Pérez
+* Santiago Cifuentes
+* Martina Mardones
 
-This repo includes `Webpack` to start an environment to build frontend views using `React`.
+---
 
-### Requirements
+## Descripción del Proyecto
+Este repositorio contiene el desarrollo del **Producto Mínimo Viable (MVP)** funcional para la plataforma **SIREB (sireb.usm.cl)** de Relaciones Estudiantiles. 
 
-- Node >= 16.13.1
-- npm >= 8.1.2
+Este MVP en React resuelve dichas deficiencias como el agendamiento digital de todos los servicios mediante una interfaz responsiva.
 
-### Quick start
+---
 
-Install dependences
+## Stack Tecnológico
+* **Frontend:** React 18
+* **Empaquetador & Build Tool:** Webpack 5 + Babel
+* **Estilos:** Tailwind CSS
 
-```
-npm install
-```
+---
 
-Launch environment
-
-```
-npm run dev
-```
-
-Now you can open http://localhost:5050
-
-### Packages included
-
-- [Webpack](https://webpack.js.org/)
-- [React Router](https://reactrouter.com/en/main)
-
-### About stylesheets
-
-- Sample stylesheets were written using the [BEM](https://getbem.com/) structure
+## Link de Despliegue
+https://magenta-alpaca-286e36.netlify.app/
